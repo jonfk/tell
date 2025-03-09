@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -23,6 +24,11 @@ var (
 const version = "0.1.0"
 
 func main() {
+	// Configure slog
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})))
+
 	rootCmd := &cobra.Command{
 		Use:   "tell",
 		Short: "Terminal English Language Liaison",
@@ -51,10 +57,15 @@ func main() {
 			// Join all args to form the prompt
 			prompt := strings.Join(args, " ")
 
-			// Stub implementation
-			fmt.Fprintf(os.Stderr, "Not implemented yet: would process prompt: %s\n", prompt)
-			fmt.Fprintf(os.Stderr, "Context: %v, Debug: %v, Format: %s, Shell: %s, Execute: %v, NoExplain: %v\n",
-				contextFlag, debugFlag, formatFlag, shellFlag, executeFlag, noExplainFlag)
+			// Stub implementation using slog
+			slog.Info("Processing prompt", 
+				"prompt", prompt,
+				"context", contextFlag, 
+				"debug", debugFlag, 
+				"format", formatFlag, 
+				"shell", shellFlag, 
+				"execute", executeFlag, 
+				"noExplain", noExplainFlag)
 			os.Exit(1)
 		},
 	}
@@ -77,7 +88,7 @@ func main() {
 			if len(args) > 0 {
 				shell = args[0]
 			}
-			fmt.Fprintf(os.Stderr, "Not implemented yet: would generate integration for shell: %s\n", shell)
+			slog.Info("Generating shell integration", "shell", shell)
 			os.Exit(1)
 		},
 	}
@@ -92,7 +103,7 @@ func main() {
 		Use:   "edit",
 		Short: "Edit configuration file",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintln(os.Stderr, "Not implemented yet: would open config file in editor")
+			slog.Info("Opening config file in editor")
 			os.Exit(1)
 		},
 	}
@@ -106,7 +117,7 @@ func main() {
 			if len(args) > 0 {
 				query = args[0]
 			}
-			fmt.Fprintf(os.Stderr, "Not implemented yet: would show history with query: %s\n", query)
+			slog.Info("Showing command history", "query", query)
 			os.Exit(1)
 		},
 	}

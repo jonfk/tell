@@ -2,14 +2,19 @@ package shell
 
 import (
 	"fmt"
+	"log/slog"
 )
 
 // GenerateIntegrationScript generates a shell integration script for the specified shell
 func GenerateIntegrationScript(shell string) (string, error) {
 	// Auto-detect shell if not specified
 	if shell == "auto" {
-		shell = DetectShell()
+		detectedShell := DetectShell()
+		slog.Info("Auto-detected shell", "shell", detectedShell)
+		shell = detectedShell
 	}
+	
+	slog.Debug("Generating integration script", "shell", shell)
 	
 	switch shell {
 	case "zsh":
@@ -19,6 +24,7 @@ func GenerateIntegrationScript(shell string) (string, error) {
 	case "fish":
 		return generateFishIntegration(), nil
 	default:
+		slog.Error("Unsupported shell", "shell", shell)
 		return "", fmt.Errorf("unsupported shell: %s", shell)
 	}
 }

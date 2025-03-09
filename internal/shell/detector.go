@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +14,8 @@ func DetectShell() string {
 	if shell != "" {
 		// Extract the shell name from the path
 		shellName := filepath.Base(shell)
+		
+		slog.Debug("Detected shell from SHELL env var", "path", shell, "name", shellName)
 		
 		// Return known shell types
 		switch shellName {
@@ -30,6 +33,7 @@ func DetectShell() string {
 	procPath := filepath.Join("/proc", string(ppid), "comm")
 	if data, err := os.ReadFile(procPath); err == nil {
 		procName := strings.TrimSpace(string(data))
+		slog.Debug("Detected shell from parent process", "ppid", ppid, "name", procName)
 		switch procName {
 		case "bash":
 			return "bash"
@@ -38,8 +42,11 @@ func DetectShell() string {
 		case "fish":
 			return "fish"
 		}
+	} else {
+		slog.Debug("Failed to read parent process info", "error", err)
 	}
 	
+	slog.Info("Could not detect shell, defaulting to bash")
 	// Default to bash if we can't detect
 	return "bash"
 }

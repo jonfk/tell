@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -61,20 +62,28 @@ func Load() (*Config, error) {
 	// Check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// Return default config if file doesn't exist
+		slog.Info("Config file not found, using defaults", "path", configPath)
 		return DefaultConfig(), nil
 	}
 
 	// Read the file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
+		slog.Error("Failed to read config file", "path", configPath, "error", err)
 		return nil, fmt.Errorf("could not read config file: %w", err)
 	}
 
 	// Parse YAML
 	config := DefaultConfig()
 	if err := yaml.Unmarshal(data, config); err != nil {
+		slog.Error("Failed to parse config file", "path", configPath, "error", err)
 		return nil, fmt.Errorf("could not parse config file: %w", err)
 	}
+
+	slog.Debug("Loaded configuration", 
+		"path", configPath, 
+		"model", config.LLMModel,
+		"preferredCommandsCount", len(config.PreferredCommands))
 
 	return config, nil
 }
@@ -89,19 +98,23 @@ func (c *Config) Save() error {
 	// Marshal to YAML
 	data, err := yaml.Marshal(c)
 	if err != nil {
+		slog.Error("Failed to marshal config to YAML", "error", err)
 		return fmt.Errorf("could not marshal config: %w", err)
 	}
 
 	// Write to file
 	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		slog.Error("Failed to write config file", "path", configPath, "error", err)
 		return fmt.Errorf("could not write config file: %w", err)
 	}
 
+	slog.Info("Saved configuration", "path", configPath)
 	return nil
 }
 
 // CreateDefaultConfig creates a default configuration file
 func CreateDefaultConfig() error {
 	config := DefaultConfig()
+	slog.Info("Creating default configuration")
 	return config.Save()
 }

@@ -2,6 +2,7 @@ package llm
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/jonfk/tell/internal/config"
@@ -60,14 +61,25 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 		{Role: "user", Content: prompt},
 	}
 
+	slog.Debug("Sending request to LLM", 
+		"model", c.config.LLMModel,
+		"includeContext", includeContext,
+		"promptLength", len(prompt))
+
 	// Call Anthropic API
 	apiResp, err := c.callAnthropicAPI(messages)
 	if err != nil {
+		slog.Error("LLM API request failed", "error", err)
 		return nil, err
 	}
 
+	slog.Debug("Received response from LLM", 
+		"inputTokens", apiResp.Usage.InputTokens,
+		"outputTokens", apiResp.Usage.OutputTokens)
+
 	// Parse the response
 	if len(apiResp.Content) == 0 {
+		slog.Error("Empty response from API")
 		return nil, fmt.Errorf("empty response from API")
 	}
 
@@ -87,6 +99,10 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 		resp.Explanation = "No explanation provided"
 	}
 
+	slog.Debug("Parsed command response", 
+		"commandLength", len(resp.Command),
+		"explanationLength", len(resp.Explanation))
+
 	return resp, nil
 }
 
@@ -94,6 +110,10 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 func (c *Client) callAnthropicAPI(messages []Message) (*AnthropicResponse, error) {
 	// Stub implementation - in a real implementation, this would make an HTTP request
 	// to the Anthropic API
+
+	slog.Debug("Would call Anthropic API", 
+		"messageCount", len(messages),
+		"model", c.config.LLMModel)
 
 	// For now, just return a mock response
 	return &AnthropicResponse{
