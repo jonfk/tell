@@ -29,7 +29,7 @@ func generateZshIntegration() string {
 # ZSH integration script
 
 tell_execute() {
-  local result=$(tell "$@")
+  local result=$(tell prompt "$@")
   local cmd=$(echo "$result" | head -n 1)
   local explanation=$(echo "$result" | tail -n +3)
 
@@ -47,7 +47,7 @@ func generateBashIntegration() string {
 # Bash integration script
 
 tell_execute() {
-  local result=$(tell "$@")
+  local result=$(tell prompt "$@")
   local cmd=$(echo "$result" | head -n 1)
   local explanation=$(echo "$result" | tail -n +3)
 
@@ -66,7 +66,7 @@ func generateFishIntegration() string {
 # Fish integration script
 
 function tell_execute
-  set result (tell $argv)
+  set result (tell prompt $argv)
   set cmd (echo $result | head -n 1)
   set explanation (echo $result | tail -n +3)
 

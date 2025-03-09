@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -31,19 +32,24 @@ func main() {
 				fmt.Printf("tell version %s\n", version)
 				return
 			}
+			
+			cmd.Help()
+		},
+	}
 
-			if len(args) == 0 {
-				cmd.Help()
-				return
-			}
-
+	// Add global flags
+	rootCmd.Flags().BoolVarP(&initFlag, "init", "i", false, "Create default configuration file")
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
+	
+	// Create prompt command
+	promptCmd := &cobra.Command{
+		Use:   "prompt [text]",
+		Short: "Convert natural language to shell commands",
+		Long:  "Convert a natural language description into appropriate shell commands",
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
 			// Join all args to form the prompt
-			prompt := args[0]
-			if len(args) > 1 {
-				for _, arg := range args[1:] {
-					prompt += " " + arg
-				}
-			}
+			prompt := strings.Join(args, " ")
 
 			// Stub implementation
 			fmt.Fprintf(os.Stderr, "Not implemented yet: would process prompt: %s\n", prompt)
@@ -52,16 +58,14 @@ func main() {
 			os.Exit(1)
 		},
 	}
-
-	// Add flags
-	rootCmd.Flags().BoolVarP(&contextFlag, "context", "c", false, "Include current directory contents in prompt")
-	rootCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information (tokens used, cost)")
-	rootCmd.Flags().StringVarP(&formatFlag, "format", "f", "text", "Output format: text|json")
-	rootCmd.Flags().StringVarP(&shellFlag, "shell", "s", "auto", "Target shell: zsh|bash|fish")
-	rootCmd.Flags().BoolVarP(&executeFlag, "execute", "e", false, "Execute command immediately")
-	rootCmd.Flags().BoolVarP(&noExplainFlag, "no-explain", "n", false, "Skip command explanation")
-	rootCmd.Flags().BoolVarP(&initFlag, "init", "i", false, "Create default configuration file")
-	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
+	
+	// Add flags to prompt command
+	promptCmd.Flags().BoolVarP(&contextFlag, "context", "c", false, "Include current directory contents in prompt")
+	promptCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information (tokens used, cost)")
+	promptCmd.Flags().StringVarP(&formatFlag, "format", "f", "text", "Output format: text|json")
+	promptCmd.Flags().StringVarP(&shellFlag, "shell", "s", "auto", "Target shell: zsh|bash|fish")
+	promptCmd.Flags().BoolVarP(&executeFlag, "execute", "e", false, "Execute command immediately")
+	promptCmd.Flags().BoolVarP(&noExplainFlag, "no-explain", "n", false, "Skip command explanation")
 
 	// Add subcommands
 	envCmd := &cobra.Command{
@@ -108,7 +112,7 @@ func main() {
 	}
 
 	configCmd.AddCommand(configEditCmd)
-	rootCmd.AddCommand(envCmd, configCmd, historyCmd)
+	rootCmd.AddCommand(promptCmd, envCmd, configCmd, historyCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
