@@ -1,0 +1,3 @@
+- [ ] Investigate the use of MCP to provide context
+- [ ] Integrate history with fzf
+- [ ] Add shell history to context. Should it include success of the run commands?
