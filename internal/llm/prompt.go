@@ -11,13 +11,13 @@ import (
 // gatherDirectoryContext gathers information about the current directory
 func gatherDirectoryContext() string {
 	var sb strings.Builder
-	
+
 	// Get current directory
 	cwd, err := os.Getwd()
 	if err == nil {
 		fmt.Fprintf(&sb, "Current directory: %s\n", cwd)
 	}
-	
+
 	// List files in current directory
 	files, err := os.ReadDir(".")
 	if err == nil {
@@ -36,7 +36,7 @@ func gatherDirectoryContext() string {
 			}
 		}
 	}
-	
+
 	return sb.String()
 }
 
@@ -77,10 +77,24 @@ Your task is to convert natural language requests into shell commands.
 
 `)
 
-	// Use raw string for output format
-	sb.WriteString(`Your response should be structured as follows:
-1. First line: The exact command to run, with no additional text
-2. After a blank line, provide a brief explanation of what the command does
+	// Output format - structured with XML tags
+	sb.WriteString(`IMPORTANT: You must structure your response using the following XML format exactly, with no deviation:
+
+<command>
+The exact command to run, with proper formatting for multi-line commands if needed
+</command>
+
+<description>
+A very brief one-line description (maximum 80 characters) of what the command does
+</description>
+
+<explanation>
+A more detailed explanation (2-5 lines) of how the command works, what each part does, and any important notes
+</explanation>
+
+The <command> section must contain only the command to execute with no additional text.
+The <description> must be extremely concise (under 80 characters) as it will be displayed in a terminal.
+The <explanation> should be brief but informative, focusing on non-obvious aspects of the command.
 
 `)
 
