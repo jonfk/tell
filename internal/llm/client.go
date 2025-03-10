@@ -52,6 +52,8 @@ func NewClient(cfg *config.Config) *Client {
 
 // GenerateCommand generates a shell command from a natural language prompt
 func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandResponse, error) {
+	// TODO: Implement context gathering if includeContext is true
+	
 	// Build system prompt
 	systemPrompt := buildSystemPrompt(c.config, includeContext)
 
@@ -84,7 +86,7 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 	}
 
 	// For now, just return the raw text as both command and explanation
-	// In a real implementation, we would parse structured output
+	// TODO: Implement proper structured output parsing
 	text := apiResp.Content[0].Text
 
 	// Simple parsing - this should be improved with proper structured output
@@ -108,9 +110,7 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 
 // callAnthropicAPI calls the Anthropic API with the given messages
 func (c *Client) callAnthropicAPI(messages []Message) (*AnthropicResponse, error) {
-	// Stub implementation - in a real implementation, this would make an HTTP request
-	// to the Anthropic API
-
+	// TODO: Implement actual API call to Anthropic
 	slog.Debug("Would call Anthropic API", 
 		"messageCount", len(messages),
 		"model", c.config.LLMModel)

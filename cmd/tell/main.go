@@ -57,7 +57,7 @@ func main() {
 			// Join all args to form the prompt
 			prompt := strings.Join(args, " ")
 
-			// Stub implementation using slog
+			// TODO: Implement prompt processing with LLM
 			slog.Info("Processing prompt", 
 				"prompt", prompt,
 				"context", contextFlag, 
@@ -66,6 +66,7 @@ func main() {
 				"shell", shellFlag, 
 				"execute", executeFlag, 
 				"noExplain", noExplainFlag)
+			fmt.Println("Unimplemented: prompt processing")
 			os.Exit(1)
 		},
 	}
@@ -88,7 +89,9 @@ func main() {
 			if len(args) > 0 {
 				shell = args[0]
 			}
+			// TODO: Implement shell integration script generation
 			slog.Info("Generating shell integration", "shell", shell)
+			fmt.Println("Unimplemented: shell integration")
 			os.Exit(1)
 		},
 	}
@@ -103,7 +106,9 @@ func main() {
 		Use:   "edit",
 		Short: "Edit configuration file",
 		Run: func(cmd *cobra.Command, args []string) {
+			// TODO: Implement config file editing
 			slog.Info("Opening config file in editor")
+			fmt.Println("Unimplemented: config editing")
 			os.Exit(1)
 		},
 	}
@@ -117,7 +122,9 @@ func main() {
 			if len(args) > 0 {
 				query = args[0]
 			}
+			// TODO: Implement command history
 			slog.Info("Showing command history", "query", query)
+			fmt.Println("Unimplemented: command history")
 			os.Exit(1)
 		},
 	}

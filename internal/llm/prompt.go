@@ -43,5 +43,11 @@ func buildSystemPrompt(cfg *config.Config, includeContext bool) string {
 	sb.WriteString("1. First line: The exact command to run, with no additional text\n")
 	sb.WriteString("2. After a blank line, provide a brief explanation of what the command does\n\n")
 
+	// TODO: Add directory context if includeContext is true
+	if includeContext {
+		// This would include information about the current directory
+		sb.WriteString("// Context information would be added here\n\n")
+	}
+
 	return sb.String()
 }

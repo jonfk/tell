@@ -16,6 +16,7 @@ func GenerateIntegrationScript(shell string) (string, error) {
 	
 	slog.Debug("Generating integration script", "shell", shell)
 	
+	// TODO: Add support for more shells (e.g., PowerShell, nushell)
 	switch shell {
 	case "zsh":
 		return generateZshIntegration(), nil
