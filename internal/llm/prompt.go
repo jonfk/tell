@@ -15,7 +15,7 @@ func gatherDirectoryContext() string {
 	// Get current directory
 	cwd, err := os.Getwd()
 	if err == nil {
-		sb.WriteString(fmt.Sprintf("Current directory: %s\n", cwd))
+		fmt.Fprintf(&sb, "Current directory: %s\n", cwd)
 	}
 	
 	// List files in current directory
@@ -30,9 +30,9 @@ func gatherDirectoryContext() string {
 				if file.IsDir() {
 					fileType = "dir"
 				}
-				sb.WriteString(fmt.Sprintf("- %s (%s, %d bytes)\n", file.Name(), fileType, info.Size()))
+				fmt.Fprintf(&sb, "- %s (%s, %d bytes)\n", file.Name(), fileType, info.Size())
 			} else {
-				sb.WriteString(fmt.Sprintf("- %s\n", file.Name()))
+				fmt.Fprintf(&sb, "- %s\n", file.Name())
 			}
 		}
 	}
@@ -44,8 +44,11 @@ func gatherDirectoryContext() string {
 func buildSystemPrompt(cfg *config.Config, includeContext bool) string {
 	var sb strings.Builder
 
-	sb.WriteString("You are TELL (Terminal English Language Liaison), an expert in Unix/Linux command line tools. ")
-	sb.WriteString("Your task is to convert natural language requests into shell commands.\n\n")
+	// Use raw string for the introduction
+	sb.WriteString(`You are TELL (Terminal English Language Liaison), an expert in Unix/Linux command line tools. 
+Your task is to convert natural language requests into shell commands.
+
+`)
 
 	// Add preferred commands
 	if len(cfg.PreferredCommands) > 0 {
@@ -65,17 +68,21 @@ func buildSystemPrompt(cfg *config.Config, includeContext bool) string {
 		sb.WriteString("\n")
 	}
 
-	// Command formatting guidelines
-	sb.WriteString("Command formatting guidelines:\n")
-	sb.WriteString("- Use backslashes (\\) to break long commands into multiple lines for readability\n")
-	sb.WriteString("- Include proper quoting for filenames and variables\n")
-	sb.WriteString("- Prefer safe commands that won't accidentally destroy data\n")
-	sb.WriteString("- Use modern alternatives to legacy commands when appropriate\n\n")
+	// Use raw string for command formatting guidelines
+	sb.WriteString(`Command formatting guidelines:
+- Use backslashes (\) to break long commands into multiple lines for readability
+- Include proper quoting for filenames and variables
+- Prefer safe commands that won't accidentally destroy data
+- Use modern alternatives to legacy commands when appropriate
 
-	// Output format
-	sb.WriteString("Your response should be structured as follows:\n")
-	sb.WriteString("1. First line: The exact command to run, with no additional text\n")
-	sb.WriteString("2. After a blank line, provide a brief explanation of what the command does\n\n")
+`)
+
+	// Use raw string for output format
+	sb.WriteString(`Your response should be structured as follows:
+1. First line: The exact command to run, with no additional text
+2. After a blank line, provide a brief explanation of what the command does
+
+`)
 
 	// Add directory context if includeContext is true
 	if includeContext {

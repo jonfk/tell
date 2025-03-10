@@ -192,17 +192,19 @@ func (c *Config) String() string {
 		apiKey = "<not set>"
 	}
 
-	sb.WriteString(fmt.Sprintf("  Anthropic API Key: %s\n", apiKey))
-	sb.WriteString(fmt.Sprintf("  LLM Model: %s\n", c.LLMModel))
+	// Use fmt.Fprintf instead of multiple WriteString calls
+	fmt.Fprintf(&sb, `  Anthropic API Key: %s
+  LLM Model: %s
+`, apiKey, c.LLMModel)
 
 	sb.WriteString("  Preferred Commands:\n")
 	for _, cmd := range c.PreferredCommands {
-		sb.WriteString(fmt.Sprintf("    - %s\n", cmd))
+		fmt.Fprintf(&sb, "    - %s\n", cmd)
 	}
 
 	sb.WriteString("  Extra Instructions:\n")
 	for _, instr := range c.ExtraInstructions {
-		sb.WriteString(fmt.Sprintf("    - %s\n", instr))
+		fmt.Fprintf(&sb, "    - %s\n", instr)
 	}
 
 	return sb.String()
