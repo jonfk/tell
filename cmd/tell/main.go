@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jonfk/tell/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +39,7 @@ func main() {
 				fmt.Printf("tell version %s\n", version)
 				return
 			}
-			
+
 			cmd.Help()
 		},
 	}
@@ -46,7 +47,7 @@ func main() {
 	// Add global flags
 	rootCmd.Flags().BoolVarP(&initFlag, "init", "i", false, "Create default configuration file")
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
-	
+
 	// Create prompt command
 	promptCmd := &cobra.Command{
 		Use:   "prompt [text]",
@@ -58,19 +59,19 @@ func main() {
 			prompt := strings.Join(args, " ")
 
 			// TODO: Implement prompt processing with LLM
-			slog.Info("Processing prompt", 
+			slog.Info("Processing prompt",
 				"prompt", prompt,
-				"context", contextFlag, 
-				"debug", debugFlag, 
-				"format", formatFlag, 
-				"shell", shellFlag, 
-				"execute", executeFlag, 
+				"context", contextFlag,
+				"debug", debugFlag,
+				"format", formatFlag,
+				"shell", shellFlag,
+				"execute", executeFlag,
 				"noExplain", noExplainFlag)
 			fmt.Println("Unimplemented: prompt processing")
 			os.Exit(1)
 		},
 	}
-	
+
 	// Add flags to prompt command
 	promptCmd.Flags().BoolVarP(&contextFlag, "context", "c", false, "Include current directory contents in prompt")
 	promptCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information (tokens used, cost)")
@@ -117,16 +118,15 @@ func main() {
 		Use:   "show",
 		Short: "Show current configuration",
 		Run: func(cmd *cobra.Command, args []string) {
-			// TODO: Implement showing config
 			slog.Info("Showing configuration")
-			
+
 			cfg, err := config.Load()
 			if err != nil {
 				slog.Error("Failed to load configuration", "error", err)
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
-			
+
 			// Print config with sensitive information truncated
 			fmt.Println(cfg.String())
 		},
