@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -110,6 +111,41 @@ func (c *Config) Save() error {
 
 	slog.Info("Saved configuration", "path", configPath)
 	return nil
+}
+
+// String returns a string representation of the config with sensitive information truncated
+func (c *Config) String() string {
+	var sb strings.Builder
+	
+	sb.WriteString("Configuration:\n")
+	
+	// Truncate API key for security
+	apiKey := c.AnthropicAPIKey
+	if apiKey != "" {
+		// Show only first 4 and last 4 characters
+		if len(apiKey) > 8 {
+			apiKey = apiKey[:4] + "..." + apiKey[len(apiKey)-4:]
+		} else {
+			apiKey = "****"
+		}
+	} else {
+		apiKey = "<not set>"
+	}
+	
+	sb.WriteString(fmt.Sprintf("  Anthropic API Key: %s\n", apiKey))
+	sb.WriteString(fmt.Sprintf("  LLM Model: %s\n", c.LLMModel))
+	
+	sb.WriteString("  Preferred Commands:\n")
+	for _, cmd := range c.PreferredCommands {
+		sb.WriteString(fmt.Sprintf("    - %s\n", cmd))
+	}
+	
+	sb.WriteString("  Extra Instructions:\n")
+	for _, instr := range c.ExtraInstructions {
+		sb.WriteString(fmt.Sprintf("    - %s\n", instr))
+	}
+	
+	return sb.String()
 }
 
 // CreateDefaultConfig creates a default configuration file

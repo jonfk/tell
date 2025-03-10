@@ -113,6 +113,25 @@ func main() {
 		},
 	}
 
+	configShowCmd := &cobra.Command{
+		Use:   "show",
+		Short: "Show current configuration",
+		Run: func(cmd *cobra.Command, args []string) {
+			// TODO: Implement showing config
+			slog.Info("Showing configuration")
+			
+			cfg, err := config.Load()
+			if err != nil {
+				slog.Error("Failed to load configuration", "error", err)
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			
+			// Print config with sensitive information truncated
+			fmt.Println(cfg.String())
+		},
+	}
+
 	historyCmd := &cobra.Command{
 		Use:   "history [query]",
 		Short: "Show command history",
@@ -129,7 +148,7 @@ func main() {
 		},
 	}
 
-	configCmd.AddCommand(configEditCmd)
+	configCmd.AddCommand(configEditCmd, configShowCmd)
 	rootCmd.AddCommand(promptCmd, envCmd, configCmd, historyCmd)
 
 	if err := rootCmd.Execute(); err != nil {
