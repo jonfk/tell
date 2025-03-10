@@ -1,8 +1,12 @@
 package llm
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"strings"
 
 	"github.com/jonfk/tell/internal/config"
@@ -110,29 +114,7 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 
 // callAnthropicAPI calls the Anthropic API with the given messages
 func (c *Client) callAnthropicAPI(messages []Message) (*AnthropicResponse, error) {
-	// TODO: Implement actual API call to Anthropic
-	slog.Debug("Would call Anthropic API", 
-		"messageCount", len(messages),
-		"model", c.config.LLMModel)
-
-	// For now, just return a mock response
-	return &AnthropicResponse{
-		Content: []struct {
-			Text string `json:"text"`
-		}{
-			{Text: "ls -la\n\nThis command lists all files in the current directory, including hidden files, in long format."},
-		},
-		Usage: struct {
-			InputTokens  int `json:"input_tokens"`
-			OutputTokens int `json:"output_tokens"`
-		}{
-			InputTokens:  100,
-			OutputTokens: 50,
-		},
-	}, nil
-
-	/* Real implementation would look like:
-
+	// Create the request body
 	reqBody := AnthropicRequest{
 		Model:     c.config.LLMModel,
 		Messages:  messages,
@@ -171,5 +153,4 @@ func (c *Client) callAnthropicAPI(messages []Message) (*AnthropicResponse, error
 	}
 
 	return &apiResp, nil
-	*/
 }
