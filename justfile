@@ -17,9 +17,17 @@ test-coverage:
     go test -coverprofile=coverage.out ./...
     go tool cover -html=coverage.out -o coverage.html
 
-# Install the binary to $GOPATH/bin
-install:
+# Install the binary to ~/.local/bin (XDG Base Directory specification)
+install: build
+    @mkdir -p ~/.local/bin
+    @cp bin/tell ~/.local/bin/
+    @echo "Installed to ~/.local/bin/tell"
+    @echo "Make sure ~/.local/bin is in your PATH"
+
+# Install the binary to $GOPATH/bin (Go standard location)
+install-gopath:
     go install ./cmd/tell
+    @echo "Installed to $GOPATH/bin/tell"
 
 # Clean build artifacts
 clean:
