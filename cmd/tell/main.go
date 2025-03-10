@@ -39,6 +39,20 @@ func main() {
 				fmt.Printf("tell version %s\n", version)
 				return
 			}
+		
+			if initFlag {
+				slog.Info("Initializing default configuration")
+			
+				if err := config.CreateDefaultConfig(); err != nil {
+					slog.Error("Failed to create default configuration", "error", err)
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
+			
+				configPath, _ := config.GetConfigPath()
+				fmt.Printf("Created default configuration at %s\n", configPath)
+				return
+			}
 
 			cmd.Help()
 		},
@@ -148,7 +162,24 @@ func main() {
 		},
 	}
 
-	configCmd.AddCommand(configEditCmd, configShowCmd)
+	configInitCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Create default configuration file",
+		Run: func(cmd *cobra.Command, args []string) {
+			slog.Info("Initializing default configuration")
+			
+			if err := config.CreateDefaultConfig(); err != nil {
+				slog.Error("Failed to create default configuration", "error", err)
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			
+			configPath, _ := config.GetConfigPath()
+			fmt.Printf("Created default configuration at %s\n", configPath)
+		},
+	}
+
+	configCmd.AddCommand(configEditCmd, configShowCmd, configInitCmd)
 	rootCmd.AddCommand(promptCmd, envCmd, configCmd, historyCmd)
 
 	if err := rootCmd.Execute(); err != nil {
