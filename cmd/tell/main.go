@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/jonfk/tell/internal/config"
@@ -42,7 +41,7 @@ func main() {
 			}
 
 			if initFlag {
-				initConfig()
+				config.InitConfig()
 
 			}
 
@@ -113,49 +112,7 @@ func main() {
 		Use:   "edit",
 		Short: "Edit configuration file",
 		Run: func(cmd *cobra.Command, args []string) {
-			slog.Info("Opening config file in editor")
-			
-			configPath, err := config.GetConfigPath()
-			if err != nil {
-				slog.Error("Failed to get config path", "error", err)
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
-			
-			// Create the config file if it doesn't exist
-			if _, err := os.Stat(configPath); os.IsNotExist(err) {
-				slog.Info("Config file doesn't exist, creating default")
-				if err := config.CreateDefaultConfig(); err != nil {
-					slog.Error("Failed to create default config", "error", err)
-					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-					os.Exit(1)
-				}
-			}
-			
-			// Get the editor from environment variables
-			editor := os.Getenv("EDITOR")
-			if editor == "" {
-				editor = os.Getenv("VISUAL")
-			}
-			if editor == "" {
-				editor = "vi" // Default to vi if no editor is specified
-			}
-			
-			slog.Info("Opening config with editor", "editor", editor, "path", configPath)
-			
-			// Create command to open the editor
-			editorCmd := exec.Command(editor, configPath)
-			editorCmd.Stdin = os.Stdin
-			editorCmd.Stdout = os.Stdout
-			editorCmd.Stderr = os.Stderr
-			
-			if err := editorCmd.Run(); err != nil {
-				slog.Error("Failed to open editor", "error", err)
-				fmt.Fprintf(os.Stderr, "Error opening editor: %v\n", err)
-				os.Exit(1)
-			}
-			
-			fmt.Printf("Configuration saved at %s\n", configPath)
+			config.EditConfig()
 		},
 	}
 
@@ -197,7 +154,7 @@ func main() {
 		Use:   "init",
 		Short: "Create default configuration file",
 		Run: func(cmd *cobra.Command, args []string) {
-			initConfig()
+			config.InitConfig()
 		},
 	}
 
@@ -208,18 +165,4 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func initConfig() {
-	slog.Info("Initializing default configuration")
-
-	if err := config.CreateDefaultConfig(); err != nil {
-		slog.Error("Failed to create default configuration", "error", err)
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	configPath, _ := config.GetConfigPath()
-	fmt.Printf("Created default configuration at %s\n", configPath)
-	return
 }

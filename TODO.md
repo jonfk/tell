@@ -1,3 +1,5 @@
 - [ ] Investigate the use of MCP to provide context
 - [ ] Integrate history with fzf
 - [ ] Add shell history to context. Should it include success of the run commands?
+- [ ] Ensure that the shell integration gets passed the flags correctly to the program
+- [ ] Test other shell integrations bash, fish

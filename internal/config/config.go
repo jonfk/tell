@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -53,6 +54,65 @@ func GetConfigPath() (string, error) {
 	return filepath.Join(tellConfigDir, "tell.yaml"), nil
 }
 
+func EditConfig() {
+	slog.Info("Opening config file in editor")
+
+	configPath, err := GetConfigPath()
+	if err != nil {
+		slog.Error("Failed to get config path", "error", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create the config file if it doesn't exist
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		slog.Info("Config file doesn't exist, creating default")
+		if err := CreateDefaultConfig(); err != nil {
+			slog.Error("Failed to create default config", "error", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Get the editor from environment variables
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = os.Getenv("VISUAL")
+	}
+	if editor == "" {
+		editor = "vi" // Default to vi if no editor is specified
+	}
+
+	slog.Info("Opening config with editor", "editor", editor, "path", configPath)
+
+	// Create command to open the editor
+	editorCmd := exec.Command(editor, configPath)
+	editorCmd.Stdin = os.Stdin
+	editorCmd.Stdout = os.Stdout
+	editorCmd.Stderr = os.Stderr
+
+	if err := editorCmd.Run(); err != nil {
+		slog.Error("Failed to open editor", "error", err)
+		fmt.Fprintf(os.Stderr, "Error opening editor: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Configuration saved at %s\n", configPath)
+}
+
+func InitConfig() {
+	slog.Info("Initializing default configuration")
+
+	if err := CreateDefaultConfig(); err != nil {
+		slog.Error("Failed to create default configuration", "error", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	configPath, _ := GetConfigPath()
+	fmt.Printf("Created default configuration at %s\n", configPath)
+}
+
 // Load loads the configuration from disk
 func Load() (*Config, error) {
 	configPath, err := GetConfigPath()
@@ -81,8 +141,8 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("could not parse config file: %w", err)
 	}
 
-	slog.Debug("Loaded configuration", 
-		"path", configPath, 
+	slog.Debug("Loaded configuration",
+		"path", configPath,
 		"model", config.LLMModel,
 		"preferredCommandsCount", len(config.PreferredCommands))
 
@@ -116,9 +176,9 @@ func (c *Config) Save() error {
 // String returns a string representation of the config with sensitive information truncated
 func (c *Config) String() string {
 	var sb strings.Builder
-	
+
 	sb.WriteString("Configuration:\n")
-	
+
 	// Truncate API key for security
 	apiKey := c.AnthropicAPIKey
 	if apiKey != "" {
@@ -131,20 +191,20 @@ func (c *Config) String() string {
 	} else {
 		apiKey = "<not set>"
 	}
-	
+
 	sb.WriteString(fmt.Sprintf("  Anthropic API Key: %s\n", apiKey))
 	sb.WriteString(fmt.Sprintf("  LLM Model: %s\n", c.LLMModel))
-	
+
 	sb.WriteString("  Preferred Commands:\n")
 	for _, cmd := range c.PreferredCommands {
 		sb.WriteString(fmt.Sprintf("    - %s\n", cmd))
 	}
-	
+
 	sb.WriteString("  Extra Instructions:\n")
 	for _, instr := range c.ExtraInstructions {
 		sb.WriteString(fmt.Sprintf("    - %s\n", instr))
 	}
-	
+
 	return sb.String()
 }
 
