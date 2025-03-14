@@ -117,10 +117,16 @@ func main() {
 					// Just print the command
 					fmt.Println(response.Command)
 				} else {
-					// Print command and explanation
+					// Print command and explanation (now using ShortDesc and LongDesc)
 					fmt.Println(response.Command)
 					fmt.Println()
-					fmt.Println(response.Explanation)
+					// Print short description
+					fmt.Println(response.ShortDesc)
+					// Add a blank line between short and long description
+					if response.LongDesc != "" {
+						fmt.Println()
+						fmt.Println(response.LongDesc)
+					}
 				}
 			}
 
