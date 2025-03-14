@@ -124,7 +124,7 @@ func Load() (*Config, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// Return default config if file doesn't exist
 		slog.Info("Config file not found, using defaults", "path", configPath)
-		return DefaultConfig(), nil
+		return loadEnvVars(DefaultConfig()), nil
 	}
 
 	// Read the file
@@ -140,6 +140,9 @@ func Load() (*Config, error) {
 		slog.Error("Failed to parse config file", "path", configPath, "error", err)
 		return nil, fmt.Errorf("could not parse config file: %w", err)
 	}
+
+	// Check for environment variables if API key is not set in config
+	config = loadEnvVars(config)
 
 	slog.Debug("Loaded configuration",
 		"path", configPath,
@@ -208,6 +211,18 @@ func (c *Config) String() string {
 	}
 
 	return sb.String()
+}
+
+// loadEnvVars loads configuration values from environment variables if they're not set
+func loadEnvVars(config *Config) *Config {
+	// Check for Anthropic API key in environment if not set in config
+	if config.AnthropicAPIKey == "" {
+		if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
+			slog.Debug("Using Anthropic API key from environment variable")
+			config.AnthropicAPIKey = envKey
+		}
+	}
+	return config
 }
 
 // CreateDefaultConfig creates a default configuration file
