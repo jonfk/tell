@@ -43,10 +43,9 @@ type AnthropicResponse struct {
 
 // CommandResponse represents a structured response with command and explanation
 type CommandResponse struct {
-	Command     string `json:"command"`
-	ShortDesc   string `json:"short_description"`
-	LongDesc    string `json:"long_description"`
-	Explanation string `json:"explanation"` // Keep for backward compatibility
+	Command   string `json:"command"`
+	ShortDesc string `json:"short_description"`
+	LongDesc  string `json:"long_description"`
 }
 
 // parseXMLOutput parses the XML output from the LLM response
@@ -82,6 +81,8 @@ func parseXMLOutput(text string) (*CommandResponse, error) {
 	shortEnd := strings.Index(output, "</short>")
 	if shortStart != -1 && shortEnd != -1 && shortStart < shortEnd {
 		response.ShortDesc = strings.TrimSpace(output[shortStart:shortEnd])
+	} else {
+		return nil, fmt.Errorf("missing or invalid <short> tags in response")
 	}
 	
 	// Extract long explanation
@@ -89,28 +90,9 @@ func parseXMLOutput(text string) (*CommandResponse, error) {
 	longEnd := strings.Index(output, "</long>")
 	if longStart != -1 && longEnd != -1 && longStart < longEnd {
 		response.LongDesc = strings.TrimSpace(output[longStart:longEnd])
+	} else {
+		return nil, fmt.Errorf("missing or invalid <long> tags in response")
 	}
-	
-	// Build combined explanation for backward compatibility
-	var explanation strings.Builder
-	
-	if response.ShortDesc != "" {
-		explanation.WriteString(response.ShortDesc)
-	}
-	
-	if response.LongDesc != "" {
-		if explanation.Len() > 0 {
-			explanation.WriteString("\n\n")
-		}
-		explanation.WriteString(response.LongDesc)
-	}
-	
-	// If we couldn't extract structured explanation, use a default message
-	if explanation.Len() == 0 {
-		explanation.WriteString("Command generated without detailed explanation.")
-	}
-	
-	response.Explanation = explanation.String()
 	
 	return response, nil
 }
@@ -160,28 +142,17 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 	// Get the raw text from the response
 	text := apiResp.Content[0].Text
 	
-	// Parse the XML output
+	// Parse the XML output - no fallback mechanism
 	resp, err := parseXMLOutput(text)
 	if err != nil {
-		slog.Warn("Failed to parse XML output, falling back to simple parsing", "error", err)
-		
-		// Fall back to simple parsing
-		parts := strings.SplitN(text, "\n\n", 2)
-		resp = &CommandResponse{}
-		if len(parts) > 1 {
-			resp.Command = strings.TrimSpace(parts[0])
-			resp.LongDesc = strings.TrimSpace(parts[1])
-			resp.Explanation = resp.LongDesc
-		} else {
-			resp.Command = strings.TrimSpace(text)
-			resp.ShortDesc = "Generated command"
-			resp.Explanation = "No explanation provided"
-		}
+		slog.Error("Failed to parse XML output from LLM response", "error", err, "response", text)
+		return nil, fmt.Errorf("invalid response format: %w", err)
 	}
 
 	slog.Debug("Parsed command response", 
 		"commandLength", len(resp.Command),
-		"explanationLength", len(resp.Explanation))
+		"shortDescLength", len(resp.ShortDesc),
+		"longDescLength", len(resp.LongDesc))
 
 	return resp, nil
 }
