@@ -44,17 +44,17 @@ type AnthropicResponse struct {
 // CommandResponse represents a structured response with command and explanation
 type CommandResponse struct {
 	Command     string `json:"command"`
-	Explanation string `json:"explanation"`
+	ShortDesc   string `json:"short_description"`
+	LongDesc    string `json:"long_description"`
+	Explanation string `json:"explanation"` // Keep for backward compatibility
 }
 
 // parseXMLOutput parses the XML output from the LLM response
 func parseXMLOutput(text string) (*CommandResponse, error) {
 	// Check if the response contains the expected XML tags
 	if !strings.Contains(text, "<output>") || 
-	   !strings.Contains(text, "</output>") || 
-	   !strings.Contains(text, "<command>") || 
-	   !strings.Contains(text, "</command>") {
-		return nil, fmt.Errorf("response does not contain expected XML format")
+	   !strings.Contains(text, "</output>") {
+		return nil, fmt.Errorf("response does not contain <output> tags")
 	}
 	
 	// Extract the content between <output> tags
@@ -66,58 +66,53 @@ func parseXMLOutput(text string) (*CommandResponse, error) {
 	
 	output := strings.TrimSpace(text[outputStart:outputEnd])
 	
-	// Extract command
+	// Initialize response
+	response := &CommandResponse{}
+	
+	// Extract command (required)
 	commandStart := strings.Index(output, "<command>") + len("<command>")
 	commandEnd := strings.Index(output, "</command>")
 	if commandStart == -1 || commandEnd == -1 || commandStart >= commandEnd {
-		return nil, fmt.Errorf("invalid <command> tags in response")
+		return nil, fmt.Errorf("missing or invalid <command> tags in response")
 	}
-	
-	command := strings.TrimSpace(output[commandStart:commandEnd])
+	response.Command = strings.TrimSpace(output[commandStart:commandEnd])
 	
 	// Extract short description
 	shortStart := strings.Index(output, "<short>") + len("<short>")
 	shortEnd := strings.Index(output, "</short>")
+	if shortStart != -1 && shortEnd != -1 && shortStart < shortEnd {
+		response.ShortDesc = strings.TrimSpace(output[shortStart:shortEnd])
+	}
 	
 	// Extract long explanation
 	longStart := strings.Index(output, "<long>") + len("<long>")
 	longEnd := strings.Index(output, "</long>")
-	
-	// Build explanation from short and long descriptions
-	var explanation strings.Builder
-	
-	if shortStart != -1 && shortEnd != -1 && shortStart < shortEnd {
-		shortDesc := strings.TrimSpace(output[shortStart:shortEnd])
-		explanation.WriteString(shortDesc)
+	if longStart != -1 && longEnd != -1 && longStart < longEnd {
+		response.LongDesc = strings.TrimSpace(output[longStart:longEnd])
 	}
 	
-	if longStart != -1 && longEnd != -1 && longStart < longEnd {
+	// Build combined explanation for backward compatibility
+	var explanation strings.Builder
+	
+	if response.ShortDesc != "" {
+		explanation.WriteString(response.ShortDesc)
+	}
+	
+	if response.LongDesc != "" {
 		if explanation.Len() > 0 {
 			explanation.WriteString("\n\n")
 		}
-		longDesc := strings.TrimSpace(output[longStart:longEnd])
-		explanation.WriteString(longDesc)
+		explanation.WriteString(response.LongDesc)
 	}
 	
-	// If we couldn't extract structured explanation, use everything except the command
+	// If we couldn't extract structured explanation, use a default message
 	if explanation.Len() == 0 {
-		// Remove the command part and use the rest as explanation
-		explanationText := strings.Replace(output, "<command>"+command+"</command>", "", 1)
-		explanationText = strings.TrimSpace(explanationText)
-		
-		// Remove any remaining XML tags
-		explanationText = strings.ReplaceAll(explanationText, "<short>", "")
-		explanationText = strings.ReplaceAll(explanationText, "</short>", "")
-		explanationText = strings.ReplaceAll(explanationText, "<long>", "")
-		explanationText = strings.ReplaceAll(explanationText, "</long>", "")
-		
-		explanation.WriteString(explanationText)
+		explanation.WriteString("Command generated without detailed explanation.")
 	}
 	
-	return &CommandResponse{
-		Command:     command,
-		Explanation: explanation.String(),
-	}, nil
+	response.Explanation = explanation.String()
+	
+	return response, nil
 }
 
 // NewClient creates a new LLM client
@@ -175,9 +170,11 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 		resp = &CommandResponse{}
 		if len(parts) > 1 {
 			resp.Command = strings.TrimSpace(parts[0])
-			resp.Explanation = strings.TrimSpace(parts[1])
+			resp.LongDesc = strings.TrimSpace(parts[1])
+			resp.Explanation = resp.LongDesc
 		} else {
 			resp.Command = strings.TrimSpace(text)
+			resp.ShortDesc = "Generated command"
 			resp.Explanation = "No explanation provided"
 		}
 	}
