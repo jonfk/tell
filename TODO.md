@@ -1,3 +1,4 @@
+- [ ] Modify the llm client to parse the expected structured output as specified in the system prompt, in the client when handling the response. It should be xml with command, description, explanation. Make sure that the output matches the expected structured output. If it doesn't return an error.
 - [ ] Fix shell integration and actual output of `tell prompt` to separate the command, description, etc with a delimiter such as `---TELL_DELIMITER_8e3a51f9---`
     - [ ] Add alternate output format to prompt such as json with a `--json` flag
 - [ ] Integrate history with fzf

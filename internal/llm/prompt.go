@@ -80,21 +80,24 @@ Your task is to convert natural language requests into shell commands.
 	// Output format - structured with XML tags
 	sb.WriteString(`IMPORTANT: You must structure your response using the following XML format exactly, with no deviation:
 
+<output>
 <command>
 The exact command to run, with proper formatting for multi-line commands if needed
 </command>
 
-<description>
+<short>
 A very brief one-line description (maximum 80 characters) of what the command does
-</description>
+</short>
 
-<explanation>
+<long>
 A more detailed explanation (2-5 lines) of how the command works, what each part does, and any important notes
-</explanation>
+</long>
+</output>
 
+The <output> tag should surround all xml output.
 The <command> section must contain only the command to execute with no additional text.
-The <description> must be extremely concise (under 80 characters) as it will be displayed in a terminal.
-The <explanation> should be brief but informative, focusing on non-obvious aspects of the command.
+The <short> must be extremely concise (under 80 characters) as it will be displayed in a terminal.
+The <long> should be brief but informative, focusing on non-obvious aspects of the command.
 
 `)
 
