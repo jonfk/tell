@@ -47,6 +47,79 @@ type CommandResponse struct {
 	Explanation string `json:"explanation"`
 }
 
+// parseXMLOutput parses the XML output from the LLM response
+func parseXMLOutput(text string) (*CommandResponse, error) {
+	// Check if the response contains the expected XML tags
+	if !strings.Contains(text, "<output>") || 
+	   !strings.Contains(text, "</output>") || 
+	   !strings.Contains(text, "<command>") || 
+	   !strings.Contains(text, "</command>") {
+		return nil, fmt.Errorf("response does not contain expected XML format")
+	}
+	
+	// Extract the content between <output> tags
+	outputStart := strings.Index(text, "<output>") + len("<output>")
+	outputEnd := strings.Index(text, "</output>")
+	if outputStart == -1 || outputEnd == -1 || outputStart >= outputEnd {
+		return nil, fmt.Errorf("invalid <output> tags in response")
+	}
+	
+	output := strings.TrimSpace(text[outputStart:outputEnd])
+	
+	// Extract command
+	commandStart := strings.Index(output, "<command>") + len("<command>")
+	commandEnd := strings.Index(output, "</command>")
+	if commandStart == -1 || commandEnd == -1 || commandStart >= commandEnd {
+		return nil, fmt.Errorf("invalid <command> tags in response")
+	}
+	
+	command := strings.TrimSpace(output[commandStart:commandEnd])
+	
+	// Extract short description
+	shortStart := strings.Index(output, "<short>") + len("<short>")
+	shortEnd := strings.Index(output, "</short>")
+	
+	// Extract long explanation
+	longStart := strings.Index(output, "<long>") + len("<long>")
+	longEnd := strings.Index(output, "</long>")
+	
+	// Build explanation from short and long descriptions
+	var explanation strings.Builder
+	
+	if shortStart != -1 && shortEnd != -1 && shortStart < shortEnd {
+		shortDesc := strings.TrimSpace(output[shortStart:shortEnd])
+		explanation.WriteString(shortDesc)
+	}
+	
+	if longStart != -1 && longEnd != -1 && longStart < longEnd {
+		if explanation.Len() > 0 {
+			explanation.WriteString("\n\n")
+		}
+		longDesc := strings.TrimSpace(output[longStart:longEnd])
+		explanation.WriteString(longDesc)
+	}
+	
+	// If we couldn't extract structured explanation, use everything except the command
+	if explanation.Len() == 0 {
+		// Remove the command part and use the rest as explanation
+		explanationText := strings.Replace(output, "<command>"+command+"</command>", "", 1)
+		explanationText = strings.TrimSpace(explanationText)
+		
+		// Remove any remaining XML tags
+		explanationText = strings.ReplaceAll(explanationText, "<short>", "")
+		explanationText = strings.ReplaceAll(explanationText, "</short>", "")
+		explanationText = strings.ReplaceAll(explanationText, "<long>", "")
+		explanationText = strings.ReplaceAll(explanationText, "</long>", "")
+		
+		explanation.WriteString(explanationText)
+	}
+	
+	return &CommandResponse{
+		Command:     command,
+		Explanation: explanation.String(),
+	}, nil
+}
+
 // NewClient creates a new LLM client
 func NewClient(cfg *config.Config) *Client {
 	return &Client{
@@ -89,20 +162,24 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 		return nil, fmt.Errorf("empty response from API")
 	}
 
-	// For now, just return the raw text as both command and explanation
-	// TODO: Implement proper structured output parsing
+	// Get the raw text from the response
 	text := apiResp.Content[0].Text
-
-	// Simple parsing - this should be improved with proper structured output
-	parts := strings.SplitN(text, "\n\n", 2)
-
-	resp := &CommandResponse{}
-	if len(parts) > 1 {
-		resp.Command = strings.TrimSpace(parts[0])
-		resp.Explanation = strings.TrimSpace(parts[1])
-	} else {
-		resp.Command = strings.TrimSpace(text)
-		resp.Explanation = "No explanation provided"
+	
+	// Parse the XML output
+	resp, err := parseXMLOutput(text)
+	if err != nil {
+		slog.Warn("Failed to parse XML output, falling back to simple parsing", "error", err)
+		
+		// Fall back to simple parsing
+		parts := strings.SplitN(text, "\n\n", 2)
+		resp = &CommandResponse{}
+		if len(parts) > 1 {
+			resp.Command = strings.TrimSpace(parts[0])
+			resp.Explanation = strings.TrimSpace(parts[1])
+		} else {
+			resp.Command = strings.TrimSpace(text)
+			resp.Explanation = "No explanation provided"
+		}
 	}
 
 	slog.Debug("Parsed command response", 
