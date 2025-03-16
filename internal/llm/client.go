@@ -24,6 +24,12 @@ type CommandResponse struct {
 	ShowDetails bool   `json:"show_details"`
 }
 
+// LLMUsage tracks API usage information
+type LLMUsage struct {
+	Model      string
+	TokensUsed int
+}
+
 // NewClient creates a new LLM client
 func NewClient(cfg *config.Config) *Client {
 	// Create new client using the current SDK pattern
@@ -38,7 +44,7 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 // GenerateCommand generates a shell command from a natural language prompt
-func (c *Client) GenerateCommand(prompt string) (*CommandResponse, error) {
+func (c *Client) GenerateCommand(prompt string) (*CommandResponse, *LLMUsage, error) {
 	// Build the system prompt
 	systemPrompt := buildSystemPrompt(c.config)
 
@@ -58,7 +64,14 @@ func (c *Client) GenerateCommand(prompt string) (*CommandResponse, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error generating command: %w", err)
+		return nil, nil, fmt.Errorf("error generating command: %w", err)
+	}
+
+	// Create usage info
+	usage := &LLMUsage{
+		Model: c.config.LLMModel,
+		// Extract token usage if available from message
+		TokensUsed: int(message.Usage.OutputTokens + message.Usage.InputTokens),
 	}
 
 	// Extract the text content from the assistant's response
@@ -72,10 +85,10 @@ func (c *Client) GenerateCommand(prompt string) (*CommandResponse, error) {
 	// Parse the JSON output
 	cmdResponse, err := parseAndValidateResponse(responseText)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
+		return nil, usage, fmt.Errorf("error parsing response: %w", err)
 	}
 
-	return cmdResponse, nil
+	return cmdResponse, usage, nil
 }
 
 func parseAndValidateResponse(responseText string) (*CommandResponse, error) {
