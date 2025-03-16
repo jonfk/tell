@@ -47,7 +47,7 @@ func (c *Client) GenerateCommand(prompt string) (*CommandResponse, error) {
 
 	// Create the message request
 	message, err := c.client.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.F(anthropic.ModelClaude3_7SonnetLatest),
+		Model:     anthropic.F(c.config.LLMModel),
 		MaxTokens: anthropic.F(int64(1024)),
 		System: anthropic.F([]anthropic.TextBlockParam{
 			anthropic.NewTextBlock(systemPrompt),
