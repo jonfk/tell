@@ -1,47 +1,13 @@
 package llm
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/jonfk/tell/internal/config"
 )
 
-// gatherDirectoryContext gathers information about the current directory
-func gatherDirectoryContext() string {
-	var sb strings.Builder
-
-	// Get current directory
-	cwd, err := os.Getwd()
-	if err == nil {
-		fmt.Fprintf(&sb, "Current directory: %s\n", cwd)
-	}
-
-	// List files in current directory
-	files, err := os.ReadDir(".")
-	if err == nil {
-		sb.WriteString("Directory contents:\n")
-		for _, file := range files {
-			info, err := file.Info()
-			if err == nil {
-				// Add file info: name, size, and whether it's a directory
-				fileType := "file"
-				if file.IsDir() {
-					fileType = "dir"
-				}
-				fmt.Fprintf(&sb, "- %s (%s, %d bytes)\n", file.Name(), fileType, info.Size())
-			} else {
-				fmt.Fprintf(&sb, "- %s\n", file.Name())
-			}
-		}
-	}
-
-	return sb.String()
-}
-
 // buildSystemPrompt builds the system prompt for the LLM
-func buildSystemPrompt(cfg *config.Config, includeContext bool) string {
+func buildSystemPrompt(cfg *config.Config) string {
 	var sb strings.Builder
 
 	// Use raw string for the introduction
@@ -77,36 +43,33 @@ Your task is to convert natural language requests into shell commands.
 
 `)
 
-	// Output format - structured with XML tags
-	sb.WriteString(`IMPORTANT: You must structure your response using the following XML format exactly, with no deviation:
+	// Output Format
+	sb.WriteString(`IMPORTANT: Return ONLY valid JSON with the following structure:
 
-<output>
-<command>
-The exact command to run, with proper formatting for multi-line commands if needed
-</command>
+{
+  "command": "The exact command to run, with proper formatting for multi-line commands if needed",
+  "show_details": true,
+  "details": "A more detailed explanation (2-5 lines) of how the command works, what each part does, and any important notes, pitfalls, subtleties"
+}
 
-<short>
-A very brief one-line description (maximum 80 characters) of what the command does
-</short>
+Examples:
 
-<long>
-A more detailed explanation (2-5 lines) of how the command works, what each part does, and any important notes
-</long>
-</output>
+1. Simple command (listing files):
+{
+  "command": "ls -la",
+  "show_details": false,
+  "details": "Lists all files and directories in the current directory with detailed information."
+}
 
-The <output> tag should surround all xml output.
-The <command> section must contain only the command to execute with no additional text.
-The <short> must be extremely concise (under 80 characters) as it will be displayed in a terminal.
-The <long> should be brief but informative, focusing on non-obvious aspects of the command.
+2. Complex command (finding and processing files):
+{
+  "command": "find /path/to/search -type f -name \"*.log\" -mtime -7 | \\\n  xargs grep -l \"ERROR\" | \\\n  xargs wc -l | \\\n  sort -nr",
+  "show_details": true,
+  "details": "This command searches for .log files modified in the last 7 days, then filters for files containing 'ERROR', counts the lines in each file, and sorts the results by line count in descending order. The -l flag with grep only shows filenames instead of matching lines. Using xargs is more efficient than command substitution for large file sets. Be careful with file paths containing spaces."
+}
 
+Your response must contain ONLY the JSON object with no additional text, markdown, or commentary before or after it. Ensure all quotes are properly escaped and the JSON is valid and parseable.
 `)
-
-	// Add directory context if includeContext is true
-	if includeContext {
-		sb.WriteString("Current directory context:\n")
-		sb.WriteString(gatherDirectoryContext())
-		sb.WriteString("\n")
-	}
 
 	return sb.String()
 }

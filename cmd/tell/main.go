@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/jonfk/tell/internal/config"
@@ -16,11 +15,9 @@ import (
 
 var (
 	// Flags
-	contextFlag   bool
 	debugFlag     bool
 	formatFlag    string
 	shellFlag     string
-	executeFlag   bool
 	noExplainFlag bool
 	initFlag      bool
 	versionFlag   bool
@@ -94,7 +91,7 @@ func main() {
 			client := llm.NewClient(cfg)
 
 			// Generate command
-			response, err := client.GenerateCommand(prompt, contextFlag)
+			response, err := client.GenerateCommand(prompt)
 			if err != nil {
 				slog.Error("Failed to generate command", "error", err)
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -120,51 +117,18 @@ func main() {
 					// Print command and explanation (now using ShortDesc and LongDesc)
 					fmt.Println(response.Command)
 					fmt.Println()
-					// Print short description
-					fmt.Println(response.ShortDesc)
-					// Add a blank line between short and long description
-					if response.LongDesc != "" {
-						fmt.Println()
-						fmt.Println(response.LongDesc)
+					if response.ShowDetails {
+						fmt.Println(response.Details)
 					}
-				}
-			}
-
-			// Execute the command if requested
-			if executeFlag {
-				slog.Info("Executing command", "command", response.Command)
-
-				// Create shell command
-				var shellCmd *exec.Cmd
-				if shellFlag == "auto" {
-					// Use the system's default shell
-					shellCmd = exec.Command("sh", "-c", response.Command)
-				} else {
-					// Use the specified shell
-					shellCmd = exec.Command(shellFlag, "-c", response.Command)
-				}
-
-				// Connect to standard I/O
-				shellCmd.Stdin = os.Stdin
-				shellCmd.Stdout = os.Stdout
-				shellCmd.Stderr = os.Stderr
-
-				// Run the command
-				if err := shellCmd.Run(); err != nil {
-					slog.Error("Command execution failed", "error", err)
-					fmt.Fprintf(os.Stderr, "Error executing command: %v\n", err)
-					os.Exit(1)
 				}
 			}
 		},
 	}
 
 	// Add flags to prompt command
-	promptCmd.Flags().BoolVarP(&contextFlag, "context", "c", false, "Include current directory contents in prompt")
 	promptCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information (tokens used, cost)")
 	promptCmd.Flags().StringVarP(&formatFlag, "format", "f", "text", "Output format: text|json")
 	promptCmd.Flags().StringVarP(&shellFlag, "shell", "s", "auto", "Target shell: zsh|bash|fish")
-	promptCmd.Flags().BoolVarP(&executeFlag, "execute", "e", false, "Execute command immediately")
 	promptCmd.Flags().BoolVarP(&noExplainFlag, "no-explain", "n", false, "Skip command explanation")
 
 	// Add subcommands

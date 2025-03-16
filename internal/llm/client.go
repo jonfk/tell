@@ -2,7 +2,7 @@ package llm
 
 import (
 	"context"
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -19,9 +19,9 @@ type Client struct {
 
 // CommandResponse represents a structured response with command and explanation
 type CommandResponse struct {
-	Command   string `xml:"command" json:"command"`
-	ShortDesc string `xml:"short" json:"short_description"`
-	LongDesc  string `xml:"long" json:"long_description"`
+	Command     string `json:"command"`
+	Details     string `json:"details"`
+	ShowDetails bool   `json:"show_details"`
 }
 
 // NewClient creates a new LLM client
@@ -38,9 +38,9 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 // GenerateCommand generates a shell command from a natural language prompt
-func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandResponse, error) {
+func (c *Client) GenerateCommand(prompt string) (*CommandResponse, error) {
 	// Build the system prompt
-	systemPrompt := buildSystemPrompt(c.config, includeContext)
+	systemPrompt := buildSystemPrompt(c.config)
 
 	// Create context for the request
 	ctx := context.Background()
@@ -69,8 +69,8 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 		}
 	}
 
-	// Parse the XML output
-	cmdResponse, err := parseXMLOutput(responseText)
+	// Parse the JSON output
+	cmdResponse, err := parseAndValidateResponse(responseText)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response: %w", err)
 	}
@@ -78,32 +78,29 @@ func (c *Client) GenerateCommand(prompt string, includeContext bool) (*CommandRe
 	return cmdResponse, nil
 }
 
-// parseXMLOutput parses the XML output from the LLM response
-func parseXMLOutput(text string) (*CommandResponse, error) {
-	// Look for <output> tags in the text
-	startTag := "<output>"
-	endTag := "</output>"
+func parseAndValidateResponse(responseText string) (*CommandResponse, error) {
+	// Try to find JSON content in the response
+	// Look for the first '{' and the last '}'
+	startIdx := strings.Index(responseText, "{")
+	endIdx := strings.LastIndex(responseText, "}")
 
-	startIndex := strings.Index(text, startTag)
-	endIndex := strings.Index(text, endTag)
-
-	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
-		return nil, fmt.Errorf("output XML tags not found or malformed in response")
+	if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
+		return nil, fmt.Errorf("could not find valid JSON in response: %s", responseText)
 	}
 
-	// Extract the XML content including the tags
-	xmlContent := text[startIndex : endIndex+len(endTag)]
+	// Extract the JSON part of the response
+	jsonStr := responseText[startIdx : endIdx+1]
 
-	// Parse the XML
+	// Parse the JSON
 	var response CommandResponse
-	err := xml.Unmarshal([]byte(xmlContent), &response)
+	err := json.Unmarshal([]byte(jsonStr), &response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse XML response: %w", err)
+		return nil, fmt.Errorf("error unmarshaling JSON: %w, response: %s", err, jsonStr)
 	}
 
-	// Validate that we got the required fields
+	// Validate the parsed response
 	if response.Command == "" {
-		return nil, fmt.Errorf("command field is empty in the response")
+		return nil, fmt.Errorf("command is empty in response: %s", jsonStr)
 	}
 
 	return &response, nil
