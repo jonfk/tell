@@ -31,12 +31,14 @@ CREATE TABLE IF NOT EXISTS command_history (
     input_tokens INTEGER DEFAULT 0, -- Input token count
     output_tokens INTEGER DEFAULT 0, -- Output token count
     -- For filtering and searching
-    favorite BOOLEAN DEFAULT 0      -- Allow users to mark favorite commands
+    favorite BOOLEAN DEFAULT 0,     -- Allow users to mark favorite commands
+    parent_id INTEGER DEFAULT NULL REFERENCES command_history(id) -- Reference to parent command
 );
 -- Index for faster searches
 CREATE INDEX IF NOT EXISTS idx_command_history_prompt ON command_history(prompt);
 CREATE INDEX IF NOT EXISTS idx_command_history_command ON command_history(command);
 CREATE INDEX IF NOT EXISTS idx_command_history_timestamp ON command_history(timestamp);
+CREATE INDEX IF NOT EXISTS idx_command_history_parent_id ON command_history(parent_id);
 `
 
 // GetDBPath returns the path to the SQLite database file

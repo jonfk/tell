@@ -14,32 +14,6 @@ eval "$(tell env zsh)"
 
 ## NOTES
 
-- Use a yaml config file called `tell.yaml` in `$XDG_CONFIG_HOME/tell-llm` and fallback to `$HOME/.config/tell-llm`
-if it doesn't exist.
-    - A few configurations I can think of:
-        - system prompt
-        - llm API key
-        - extra_instructions that would contain
-            - list of commands and recommendations on how to use them
-            - projects that might be encountered, etc
-- `print -z "your command here"` will put the command on the next prompt when called from within a script or command.
-    - is this possible in other shells?
-- Should the contents of the current directory be put into the context? Maybe it should be possible with a flag.
-- The system prompt should specify the programs installed that I would prefer to use. For example: 
-    - rg and fd for searching
-    - common languages I program in and therefore their ecosystems
-        - Notes for some ecosystems. e.g. use uv for package management in python projects
-- Put a few notes on what makes a good command.
-    - e.g. split by line with `\` for long commands or pipes sequences.
-    - brainstorm with claude on what else could be good suggestions for the system prompt.
-- Try to get structured output such as:
-    - short explanation of the command(s) printed
-    - command applied on the prompt
-- Provide a flag that would print debug information such as the number of tokens used and the cost.
-- Add logging to an sqlite db
-- Default to using anthropic as the llm provider. We can add more providers later.
-- debug logging should be done using log/slog
-    - We should log to a log file whenever tell is called 
 
 ## Proposed Architecture
 

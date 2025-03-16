@@ -18,3 +18,4 @@
     - [x] Add separate input and output tokens usage to llm/client.go
 - [ ] history command should return in reverse chronological order
 - [ ] Update Readme with capabilities
+- [ ] extra prompts for ecosystem preferences?

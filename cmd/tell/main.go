@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/jonfk/tell/internal/config"
 	"github.com/jonfk/tell/internal/llm"
+	"github.com/jonfk/tell/internal/model"
 	"github.com/jonfk/tell/internal/shellenv"
 	"github.com/jonfk/tell/internal/storage"
 	"github.com/spf13/cobra"
@@ -27,6 +29,7 @@ var (
 	versionFlag   bool
 	limitFlag     int
 	favoriteFlag  bool
+	continueFlag  bool
 )
 
 const version = "0.1.0"
@@ -59,7 +62,6 @@ func main() {
 	rootCmd.Flags().BoolVarP(&initFlag, "init", "i", false, "Create default configuration file")
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
 
-	// Create prompt command
 	promptCmd := &cobra.Command{
 		Use:   "prompt [text]",
 		Short: "Convert natural language to shell commands",
@@ -102,14 +104,44 @@ func main() {
 			// Create LLM client
 			client := llm.NewClient(cfg)
 
+			// Variables for parent tracking
+			var parentID sql.NullInt64
+			parentID.Valid = false
+
 			// Generate command
-			response, usage, err := client.GenerateCommand(prompt)
+			var response *model.CommandResponse
+			var usage *model.LLMUsage
+			var genErr error
+
+			// Handle continue flag
+			if continueFlag && db != nil {
+				// Get most recent successful command
+				previousEntry, prevErr := db.GetMostRecentSuccessfulCommand()
+				if prevErr != nil {
+					slog.Error("Failed to get previous command", "error", prevErr)
+					fmt.Fprintf(os.Stderr, "Error: Failed to get previous command: %v\n", prevErr)
+					os.Exit(1)
+				}
+
+				slog.Debug("Continuing from previous command", "id", previousEntry.ID)
+				fmt.Fprintf(os.Stderr, "Continuing from previous command: %s\n", previousEntry.Command)
+
+				// Generate command as continuation
+				response, usage, genErr = client.GenerateCommandContinuation(prompt, previousEntry)
+
+				// Set parent ID
+				parentID.Valid = true
+				parentID.Int64 = previousEntry.ID
+			} else {
+				// Normal command generation
+				response, usage, genErr = client.GenerateCommand(prompt)
+			}
 
 			// Log to database if available
 			if db != nil {
 				var errorMsg string
-				if err != nil {
-					errorMsg = err.Error()
+				if genErr != nil {
+					errorMsg = genErr.Error()
 				}
 
 				_, dbErr := db.AddHistoryEntry(
@@ -117,6 +149,7 @@ func main() {
 					response,
 					usage,
 					errorMsg,
+					parentID, // Include parent ID
 				)
 
 				if dbErr != nil {
@@ -128,9 +161,9 @@ func main() {
 			}
 
 			// Handle command generation error after attempting to log it
-			if err != nil {
-				slog.Error("Failed to generate command", "error", err)
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			if genErr != nil {
+				slog.Error("Failed to generate command", "error", genErr)
+				fmt.Fprintf(os.Stderr, "Error: %v\n", genErr)
 				os.Exit(1)
 			}
 
@@ -172,6 +205,7 @@ func main() {
 	promptCmd.Flags().StringVarP(&formatFlag, "format", "f", "text", "Output format: text|json")
 	promptCmd.Flags().StringVarP(&shellFlag, "shell", "s", "auto", "Target shell: zsh|bash|fish")
 	promptCmd.Flags().BoolVarP(&noExplainFlag, "no-explain", "n", false, "Skip command explanation")
+	promptCmd.Flags().BoolVarP(&continueFlag, "continue", "c", false, "Continue from the most recent successful command")
 
 	// History command
 	historyCmd := &cobra.Command{
@@ -200,7 +234,7 @@ func main() {
 			}
 			defer db.Close()
 
-			var entries []storage.HistoryEntry
+			var entries []model.HistoryEntry
 
 			if query != "" {
 				// Search by query
@@ -232,6 +266,10 @@ func main() {
 				// Add favorite indicator
 				if entry.Favorite {
 					fmt.Print(" ⭐")
+				}
+				// Add continuation indicator
+				if entry.ParentID.Valid {
+					fmt.Printf(" (continues from %d)", entry.ParentID.Int64)
 				}
 				fmt.Println()
 
@@ -295,6 +333,12 @@ func main() {
 			fmt.Printf("ID: %d\n", entry.ID)
 			fmt.Printf("Time: %s\n", entry.Timestamp.Format(time.RFC1123))
 			fmt.Printf("Favorite: %v\n", entry.Favorite)
+
+			// Display parent ID if present
+			if entry.ParentID.Valid {
+				fmt.Printf("Continues from: %d\n", entry.ParentID.Int64)
+			}
+
 			fmt.Printf("Model: %s\n", entry.Model)
 			fmt.Printf("Input Tokens: %d\n", entry.InputTokens)
 			fmt.Printf("Output Tokens: %d\n", entry.OutputTokens)
