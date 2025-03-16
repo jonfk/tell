@@ -15,4 +15,6 @@
     - Decided not to implement because I don't see the value of keeping this kind of log files around and the complication of log rotation.
 - [ ] Save history of requests and responses in an sqlite db `$XDG_DATA_HOME/tell-llm/history.db` and fallback `$HOME/.local/share/tell-llm/history.db`
 - [ ] Add estimate cost calculation and add this to history log
-    - [ ] Add separate input and output tokens usage to llm/client.go
+    - [x] Add separate input and output tokens usage to llm/client.go
+- [ ] history command should return in reverse chronological order
+- [ ] Update Readme with capabilities
