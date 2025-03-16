@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -26,10 +27,9 @@ var (
 const version = "0.1.0"
 
 func main() {
-	// Configure slog
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	})))
+	// Initially disable logging completely by using a no-op handler
+	// Logging is only enabled if debugFlag is set
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	rootCmd := &cobra.Command{
 		Use:   "tell",
