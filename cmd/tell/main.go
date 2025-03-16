@@ -137,7 +137,7 @@ func main() {
 			// Display debug info if requested
 			if debugFlag && usage != nil {
 				fmt.Fprintf(os.Stderr, "Model: %s\n", usage.Model)
-				fmt.Fprintf(os.Stderr, "Tokens used: %d\n", usage.TokensUsed)
+				fmt.Fprintf(os.Stderr, "Tokens used: input=%d, output=%d\n", usage.InputTokens, usage.OutputTokens)
 			}
 
 			// Handle output based on format
@@ -296,7 +296,8 @@ func main() {
 			fmt.Printf("Time: %s\n", entry.Timestamp.Format(time.RFC1123))
 			fmt.Printf("Favorite: %v\n", entry.Favorite)
 			fmt.Printf("Model: %s\n", entry.Model)
-			fmt.Printf("Tokens: %d\n", entry.TokensUsed)
+			fmt.Printf("Input Tokens: %d\n", entry.InputTokens)
+			fmt.Printf("Output Tokens: %d\n", entry.OutputTokens)
 			fmt.Println()
 			fmt.Printf("Prompt: %s\n", entry.Prompt)
 			fmt.Println()

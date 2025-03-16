@@ -26,8 +26,9 @@ type CommandResponse struct {
 
 // LLMUsage tracks API usage information
 type LLMUsage struct {
-	Model      string
-	TokensUsed int
+	Model        string
+	InputTokens  int
+	OutputTokens int
 }
 
 // NewClient creates a new LLM client
@@ -69,9 +70,9 @@ func (c *Client) GenerateCommand(prompt string) (*CommandResponse, *LLMUsage, er
 
 	// Create usage info
 	usage := &LLMUsage{
-		Model: c.config.LLMModel,
-		// Extract token usage if available from message
-		TokensUsed: int(message.Usage.OutputTokens + message.Usage.InputTokens),
+		Model:        c.config.LLMModel,
+		InputTokens:  int(message.Usage.OutputTokens),
+		OutputTokens: int(message.Usage.InputTokens),
 	}
 
 	// Extract the text content from the assistant's response

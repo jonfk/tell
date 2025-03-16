@@ -20,7 +20,8 @@ type HistoryEntry struct {
 	ShowDetails  bool
 	ErrorMessage string
 	Model        string
-	TokensUsed   int
+	InputTokens  int
+	OutputTokens int
 	Favorite     bool
 }
 
@@ -37,12 +38,12 @@ func (db *DB) AddHistoryEntry(
 
 	query := `
 		INSERT INTO command_history (
-			prompt, command, details, show_details, error_message, model, tokens_used
-		) VALUES (?, ?, ?, ?, ?, ?, ?)
+			prompt, command, details, show_details, error_message, model, input_tokens, output_tokens
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	var command, details, model string
-	var tokensUsed int
+	var inputTokens, outputTokens int
 	var showDetails bool
 
 	if response != nil {
@@ -52,7 +53,8 @@ func (db *DB) AddHistoryEntry(
 	}
 	if usage != nil {
 		model = usage.Model
-		tokensUsed = usage.TokensUsed
+		inputTokens = usage.InputTokens
+		outputTokens = usage.OutputTokens
 	}
 
 	result, err := db.conn.Exec(
@@ -63,7 +65,7 @@ func (db *DB) AddHistoryEntry(
 		showDetails,
 		errorMsg,
 		model,
-		tokensUsed,
+		inputTokens, outputTokens,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("could not add history entry: %w", err)
@@ -86,7 +88,7 @@ func (db *DB) GetHistoryEntries(limit int, offset int, onlyFavorites bool, searc
 	query := `
 		SELECT 
 			id, timestamp, prompt, command, details, show_details, 
-			error_message, model, tokens_used, favorite
+			error_message, model, input_tokens, output_tokens, favorite
 		FROM command_history
 		WHERE 1=1
 	`
@@ -127,7 +129,8 @@ func (db *DB) GetHistoryEntries(limit int, offset int, onlyFavorites bool, searc
 			&entry.ShowDetails,
 			&entry.ErrorMessage,
 			&entry.Model,
-			&entry.TokensUsed,
+			&entry.InputTokens,
+			&entry.OutputTokens,
 			&entry.Favorite,
 		)
 		if err != nil {
@@ -157,7 +160,7 @@ func (db *DB) GetHistoryEntry(id int64) (*HistoryEntry, error) {
 	query := `
 		SELECT 
 			id, timestamp, prompt, command, details, show_details, 
-			error_message, model, tokens_used, favorite
+			error_message, model, input_tokens, output_tokens, favorite
 		FROM command_history
 		WHERE id = ?
 	`
@@ -174,7 +177,8 @@ func (db *DB) GetHistoryEntry(id int64) (*HistoryEntry, error) {
 		&entry.ShowDetails,
 		&entry.ErrorMessage,
 		&entry.Model,
-		&entry.TokensUsed,
+		&entry.InputTokens,
+		&entry.OutputTokens,
 		&entry.Favorite,
 	)
 
@@ -251,7 +255,7 @@ func (db *DB) SearchHistory(query string, limit int) ([]HistoryEntry, error) {
 	sqlQuery := `
 		SELECT 
 			id, timestamp, prompt, command, details, show_details, 
-			error_message, model, tokens_used, favorite
+			error_message, model, input_tokens, output_tokens, favorite
 		FROM command_history
 		WHERE prompt LIKE ? OR command LIKE ?
 		ORDER BY timestamp DESC
@@ -280,7 +284,8 @@ func (db *DB) SearchHistory(query string, limit int) ([]HistoryEntry, error) {
 			&entry.ShowDetails,
 			&entry.ErrorMessage,
 			&entry.Model,
-			&entry.TokensUsed,
+			&entry.InputTokens,
+			&entry.OutputTokens,
 			&entry.Favorite,
 		)
 		if err != nil {

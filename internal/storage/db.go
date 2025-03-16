@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS command_history (
     -- LLM API information
     error_message TEXT,             -- Error message if failed
     model TEXT,                     -- LLM model used
-    tokens_used INTEGER DEFAULT 0,  -- Token count
+    input_tokens INTEGER DEFAULT 0, -- Input token count
+    output_tokens INTEGER DEFAULT 0, -- Output token count
     -- For filtering and searching
     favorite BOOLEAN DEFAULT 0      -- Allow users to mark favorite commands
 );
