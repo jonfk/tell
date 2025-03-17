@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -23,14 +24,12 @@ func DetectShell() string {
 			return "bash"
 		case "zsh":
 			return "zsh"
-		case "fish":
-			return "fish"
 		}
 	}
 
 	// Check parent process name as fallback
 	ppid := os.Getppid()
-	procPath := filepath.Join("/proc", string(ppid), "comm")
+	procPath := filepath.Join("/proc", strconv.Itoa(ppid), "comm")
 	if data, err := os.ReadFile(procPath); err == nil {
 		procName := strings.TrimSpace(string(data))
 		slog.Debug("Detected shell from parent process", "ppid", ppid, "name", procName)
@@ -39,8 +38,6 @@ func DetectShell() string {
 			return "bash"
 		case "zsh":
 			return "zsh"
-		case "fish":
-			return "fish"
 		}
 	} else {
 		slog.Debug("Failed to read parent process info", "error", err)

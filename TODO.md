@@ -1,21 +1,25 @@
-- [x] Modify the llm client to parse the expected structured output as specified in the system prompt, in the client when handling the response. It should be xml with command, description, explanation. Make sure that the output matches the expected structured output. If it doesn't return an error.
-- [x] Fix shell integration and actual output of `tell prompt` to separate the command, description, etc with a delimiter such as `---TELL_DELIMITER_8e3a51f9---`
-    - [x] Add alternate output format to prompt such as json with a `--json` flag
+# more LLM backends
+
 - [ ] Add some validation to the model set in config
-- [ ] Log success or execution of generated commands to sqlite history
+- [ ] Add per model configuration
+    - Maybe profiles? switchable with a cli switch
 - [ ] Allow setting multiple models maybe with short name? and a switch to switch model.
+- [ ] Add additional LLM backends
+- [ ] Use `llm` as a possible backend
+
+# Shell integration / more info in history
+
+- [ ] Log success or execution of generated commands to sqlite history
+    - Can use post execution hook for than in zsh. Add a subcommand to log that to history.
 - [ ] Integrate history with fzf
-- [ ] Add more context to the command
-- [ ] Add shell history to context
 - [ ] Ensure that the shell integration gets passed the flags correctly to the program
 - [ ] Test other shell integrations bash, fish
-- [ ] Investigate the use of MCP to provide context
-- [x] Only print logs if debug is enabled
-    - [ ] ~output logs to a file that follows the XDG spec `$XDG_STATE_HOME/tell-llm/logs/` and fallback `$HOME/.local/state/tell-llm/logs/`~
-    - Decided not to implement because I don't see the value of keeping this kind of log files around and the complication of log rotation.
-- [ ] Save history of requests and responses in an sqlite db `$XDG_DATA_HOME/tell-llm/history.db` and fallback `$HOME/.local/share/tell-llm/history.db`
 - [ ] Add estimate cost calculation and add this to history log
-    - [x] Add separate input and output tokens usage to llm/client.go
 - [ ] history command should return in reverse chronological order
-- [ ] Update Readme with capabilities
+
+# More context
+
+- [ ] Add more context to the command
+- [ ] Add shell history to context
+- [ ] Investigate the use of MCP to provide context
 - [ ] extra prompts for ecosystem preferences?

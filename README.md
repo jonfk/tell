@@ -56,12 +56,10 @@ eval "$(tell env zsh)"
 
 # For bash (add to ~/.bashrc)
 eval "$(tell env bash)"
-
-# For fish (add to ~/.config/fish/config.fish)
-tell env fish | source
 ```
 
-This adds a `tellme` command that puts the generated command directly on your shell prompt, ready to execute.
+This adds a `tellme` command that puts the generated command directly on your shell prompt, ready to execute. You 
+can create an alias such as `alias t=tellme` for even quicker cli usage.
 
 ## Configuration
 
@@ -138,8 +136,7 @@ tell history delete 42
 
 ### Shell Integration
 
-The shell integration adds a `tellme` command that puts the generated command directly on your shell prompt. You 
-can create an alias such as `alias t=tellme` for even shorter prompting.
+The shell integration adds a `tellme` command that puts the generated command directly on your shell prompt. 
 
 ```bash
 # This will generate a command and place it on your prompt
