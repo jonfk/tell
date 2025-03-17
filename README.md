@@ -12,7 +12,7 @@ Tell is a command-line tool that converts natural language into shell commands. 
 
 - **Natural Language to Shell Commands**: Convert plain English descriptions into executable shell commands
 - **Smart Command Explanation**: Get detailed explanations of complex or obscure commands
-    - The LLM decides on whether to show details or not
+    - Let the LLM decides on whether to show details or not, or pass `--no-explain` to suppress always.
 - **Command History**: Browse, search, and manage your command history
 - **Favorites**: Mark and filter your most useful command translations
 - **Multi-shell Support**: Works with bash and zsh shells
