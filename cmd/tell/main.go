@@ -21,7 +21,7 @@ import (
 
 var (
 	// Flags
-	debugFlag     bool
+	verboseFlag   bool
 	formatFlag    string
 	shellFlag     string
 	noExplainFlag bool
@@ -43,6 +43,11 @@ func main() {
 		Use:   "tell",
 		Short: "Terminal English Language Liaison",
 		Long:  "TELL: Convert English to shell commands",
+		// This PersistentPreRun sets up logging for all commands
+		// Child commands with their own PersistentPreRun MUST call setupLogging()
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			setupLogging(verboseFlag)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if versionFlag {
 				fmt.Printf("tell version %s\n", version)
@@ -59,8 +64,9 @@ func main() {
 	}
 
 	// Add global flags
+	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "v", false, "Enable verbose logging to stderr")
 	rootCmd.Flags().BoolVarP(&initFlag, "init", "i", false, "Create default configuration file")
-	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "", false, "Show version information")
 
 	promptCmd := &cobra.Command{
 		Use:   "prompt [text]",
@@ -70,14 +76,6 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			// Join all args to form the prompt
 			prompt := strings.Join(args, " ")
-
-			// Set debug level if debug flag is enabled
-			if debugFlag {
-				handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				})
-				slog.SetDefault(slog.New(handler))
-			}
 
 			// Load configuration
 			cfg, err := config.Load()
@@ -168,7 +166,7 @@ func main() {
 			}
 
 			// Display debug info if requested
-			if debugFlag && usage != nil {
+			if verboseFlag && usage != nil {
 				fmt.Fprintf(os.Stderr, "Model: %s\n", usage.Model)
 				fmt.Fprintf(os.Stderr, "Tokens used: input=%d, output=%d\n", usage.InputTokens, usage.OutputTokens)
 			}
@@ -201,7 +199,6 @@ func main() {
 	}
 
 	// Add flags to prompt command
-	promptCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information (tokens used, cost)")
 	promptCmd.Flags().StringVarP(&formatFlag, "format", "f", "text", "Output format: text|json")
 	promptCmd.Flags().StringVarP(&shellFlag, "shell", "s", "auto", "Target shell: zsh|bash|fish")
 	promptCmd.Flags().BoolVarP(&noExplainFlag, "no-explain", "n", false, "Skip command explanation")
@@ -216,14 +213,6 @@ func main() {
 			query := ""
 			if len(args) > 0 {
 				query = args[0]
-			}
-
-			// Set debug level if debug flag is enabled
-			if debugFlag {
-				handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				})
-				slog.SetDefault(slog.New(handler))
 			}
 
 			db, err := initializeDatabase()
@@ -286,7 +275,6 @@ func main() {
 	}
 
 	// Add flags to history command
-	historyCmd.Flags().BoolVarP(&debugFlag, "debug", "d", false, "Show debug information")
 	historyCmd.Flags().IntVarP(&limitFlag, "limit", "l", 10, "Maximum number of entries to show")
 	historyCmd.Flags().BoolVarP(&favoriteFlag, "favorites", "f", false, "Show only favorite entries")
 
@@ -303,14 +291,6 @@ func main() {
 				slog.Error("Invalid history ID", "input", args[0], "error", err)
 				fmt.Fprintf(os.Stderr, "Error: Invalid history ID: %s\n", args[0])
 				os.Exit(1)
-			}
-
-			// Set debug level if debug flag is enabled
-			if debugFlag {
-				handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				})
-				slog.SetDefault(slog.New(handler))
 			}
 
 			db, err := initializeDatabase()
@@ -374,14 +354,6 @@ func main() {
 				os.Exit(1)
 			}
 
-			// Set debug level if debug flag is enabled
-			if debugFlag {
-				handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				})
-				slog.SetDefault(slog.New(handler))
-			}
-
 			db, err := initializeDatabase()
 			if err != nil {
 				slog.Error("Failed to initialize database", "error", err)
@@ -427,14 +399,6 @@ func main() {
 				slog.Error("Invalid history ID", "input", args[0], "error", err)
 				fmt.Fprintf(os.Stderr, "Error: Invalid history ID: %s\n", args[0])
 				os.Exit(1)
-			}
-
-			// Set debug level if debug flag is enabled
-			if debugFlag {
-				handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				})
-				slog.SetDefault(slog.New(handler))
 			}
 
 			db, err := initializeDatabase()
@@ -543,4 +507,16 @@ func initializeDatabase() (*storage.DB, error) {
 	}
 
 	return db, nil
+}
+
+// setupLogging configures the application logging based on verbose flag
+// IMPORTANT: All commands with custom PersistentPreRun MUST call this function
+// to maintain consistent logging behavior
+func setupLogging(verbose bool) {
+	if verbose {
+		handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})
+		slog.SetDefault(slog.New(handler))
+	}
 }
